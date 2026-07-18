@@ -15,7 +15,8 @@
  *      limitations under the License.
  */
 
-#include "string.h"
+#include <string.h>
+#include <stdlib.h>
 #include "bsp_board.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 #include "driver/i2s_std.h"
@@ -259,4 +260,48 @@ esp_err_t bsp_sdcard_deinit(char *mount_point)
     card = NULL;
 
     return ret_val;
+}
+
+esp_err_t bsp_audio_play(const int16_t* data, int length, TickType_t ticks_to_wait)
+{
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    return ESP_OK;
+#else
+    size_t bytes_written = 0;
+    esp_err_t ret = ESP_OK;
+
+    int num_samples = length / sizeof(int16_t);
+    // Duplicate mono samples to both Left and Right channels (stereo)
+    int32_t *data_32 = malloc(num_samples * 2 * sizeof(int32_t));
+    if (data_32 == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    for (int i = 0; i < num_samples; i++) {
+        int32_t sample = ((int32_t)data[i]) << 16;
+        data_32[2 * i]     = sample; // Left
+        data_32[2 * i + 1] = sample; // Right
+    }
+
+    ret = i2s_write(I2S_NUM_1, data_32, num_samples * 2 * sizeof(int32_t), &bytes_written, ticks_to_wait);
+    if (ret != ESP_OK) {
+        printf("bsp_audio_play: i2s_write failed! ret=%d\n", ret);
+    }
+
+    free(data_32);
+    return ret;
+#endif
+}
+
+esp_err_t bsp_audio_set_play_vol(int volume)
+{
+    return ESP_OK;
+}
+
+esp_err_t bsp_audio_get_play_vol(int *volume)
+{
+    if (volume) {
+        *volume = 60;
+    }
+    return ESP_OK;
 }
