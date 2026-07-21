@@ -44,7 +44,7 @@ void relay_init() {
   gpio_set_direction(RELAY_GPIO, GPIO_MODE_OUTPUT);
   // Изначально выключаем реле.
   // Если реле щелкнуло при старте — попробуй поменять 1 на 0.
-  gpio_set_level(RELAY_GPIO, 1);
+  gpio_set_level(RELAY_GPIO, 0);
 }
 
 void led_init() {
@@ -154,7 +154,7 @@ void detect_Task(void *arg) {
     if (res->wakeup_state == WAKENET_DETECTED) {
       printf("WAKEWORD DETECTED\n");
       multinet->clean(model_data);
-      // set_led_color(0, 255, 0);
+      set_led_color(0, 255, 0);
     } else if (res->wakeup_state == WAKENET_CHANNEL_VERIFIED) {
       play_voice = -1;
       detect_flag = 1;
@@ -185,14 +185,14 @@ void detect_Task(void *arg) {
           case 1: // Hello
             detect_flag = 2;
             play_voice = 13;
-            set_led_color(255, 255, 255);
-            gpio_set_level(RELAY_GPIO, 0);
+            led_strip->clear(led_strip, 100);
+            gpio_set_level(RELAY_GPIO, 1);
             break;
           case 3: // Bye Bye
             detect_flag = 2;
             play_voice = 14;
             led_strip->clear(led_strip, 100);
-            gpio_set_level(RELAY_GPIO, 1);
+            gpio_set_level(RELAY_GPIO, 0);
             break;
           default:
             break;
@@ -206,7 +206,7 @@ void detect_Task(void *arg) {
         printf("timeout, string:%s\n", mn_result->string);
         afe_handle->enable_wakenet(afe_data);
         detect_flag = 0;
-        // led_strip->clear(led_strip, 100);
+        led_strip->clear(led_strip, 100);
         printf("\n-----------awaits to be waken up-----------\n");
         continue;
       }
